@@ -349,6 +349,49 @@ class VibeClient:
         input_channel = await self._to_input_channel(channel)
         return await self._client(LeaveChannelRequest(input_channel))
 
+    # ---- profile photos ----
+    async def get_profile_photos(self, entity, limit=None, offset=0, max_id=0):
+        """List a user's/channel's profile photos."""
+        self._require_client()
+        return await self._client.get_profile_photos(
+            entity, limit=limit, offset=offset, max_id=max_id,
+        )
+
+    def iter_profile_photos(self, entity, limit=None, offset=0, max_id=0):
+        """Async iterator over profile photos (use: async for ...)."""
+        self._require_client()
+        return self._client.iter_profile_photos(
+            entity, limit=limit, offset=offset, max_id=max_id,
+        )
+
+    async def download_profile_photo(self, entity, file=None, download_big=True):
+        """Download profile photo. Returns path or None if no photo."""
+        self._require_client()
+        return await self._client.download_profile_photo(
+            entity, file=file, download_big=download_big,
+        )
+
+    # ---- dialogs (extended) ----
+    def iter_dialogs(self, limit=None, **kwargs):
+        """Async iterator over dialogs (use: async for d in ...)."""
+        self._require_client()
+        return self._client.iter_dialogs(limit=limit, **kwargs)
+
+    async def get_drafts(self, entity=None):
+        """Return drafts (all or for a specific chat)."""
+        self._require_client()
+        return await self._client.get_drafts(entity)
+
+    def iter_drafts(self, entity=None):
+        """Async iterator over drafts."""
+        self._require_client()
+        return self._client.iter_drafts(entity)
+
+    async def delete_dialog(self, entity, revoke=False):
+        """Delete a chat from the dialog list (revoke=True also leaves it)."""
+        self._require_client()
+        return await self._client.delete_dialog(entity, revoke=revoke)
+
     # ---- transparent passthrough to Telethon ----
     # Any attribute not defined on VibeClient (or not a dunder / private
     # internal) is forwarded to the underlying TelegramClient. This makes
