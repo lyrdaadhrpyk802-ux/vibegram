@@ -267,6 +267,32 @@ class VibeClient:
         self._require_client()
         return await self._client.upload_file(file, **kwargs)
 
+    # ---- peer / entity ----
+    async def get_entity(self, entity):
+        """Resolve a peer. Accepts id, username (@name), phone, or URL.
+        Returns User, Chat, or Channel (or a list if `entity` is a list)."""
+        self._require_client()
+        return await self._client.get_entity(entity)
+
+    async def get_input_entity(self, peer):
+        """Return the InputPeer for a peer (needed by raw TL calls)."""
+        self._require_client()
+        return await self._client.get_input_entity(peer)
+
+    def get_peer_id(self, peer, add_mark=True):
+        """Return the numeric id of a peer without network round-trip.
+        `add_mark=True` returns marked id (works with get_entity/get_messages)."""
+        self._require_client()
+        return self._client.get_peer_id(peer, add_mark=add_mark)
+
+    async def resolve_username(self, username):
+        """Resolve '@name' or 'name' or a t.me URL to a full entity."""
+        self._require_client()
+        name = username.lstrip("@")
+        if "t.me/" in name or "telegram.me/" in name:
+            name = name.rsplit("/", 1)[-1]
+        return await self._client.get_entity(name)
+
     # ---- transparent passthrough to Telethon ----
     # Any attribute not defined on VibeClient (or not a dunder / private
     # internal) is forwarded to the underlying TelegramClient. This makes
