@@ -569,6 +569,12 @@ class VibeClient:
             raise RuntimeError("call connect() first")
 
 
+# ---- attach account methods ----
+from userapi.account import bind_to as _bind_account
+_count_new, _count_skipped = _bind_account(VibeClient)
+print(f"[account] attached {_count_new} methods ({_count_skipped} already present)")
+
+
 async def _maybe_await(value):
     if asyncio.iscoroutine(value):
         return await value
