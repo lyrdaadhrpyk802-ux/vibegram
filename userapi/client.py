@@ -279,11 +279,11 @@ class VibeClient:
         self._require_client()
         return await self._client.get_input_entity(peer)
 
-    def get_peer_id(self, peer, add_mark=True):
-        """Return the numeric id of a peer without network round-trip.
+    async def get_peer_id(self, peer, add_mark=True):
+        """Return the numeric id of a peer.
         `add_mark=True` returns marked id (works with get_entity/get_messages)."""
         self._require_client()
-        return self._client.get_peer_id(peer, add_mark=add_mark)
+        return await self._client.get_peer_id(peer, add_mark=add_mark)
 
     async def resolve_username(self, username):
         """Resolve '@name' or 'name' or a t.me URL to a full entity."""
