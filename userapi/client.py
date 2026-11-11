@@ -228,6 +228,45 @@ class VibeClient:
         self._require_client()
         return self._client.action(peer, action, **kwargs)
 
+    # ---- files and media ----
+    async def send_file(self, peer, file, caption=None, **kwargs):
+        """Send photo/video/document/voice.
+
+        `file` may be a path, bytes, file-like, or URL. Any extra keyword
+        args are forwarded to Telethon (force_document, voice_note,
+        video_note, supports_streaming, reply_to, progress_callback, ...).
+        Returns the new Message.
+        """
+        self._require_client()
+        return await self._client.send_file(
+            peer, file, caption=caption, **kwargs,
+        )
+
+    async def download_media(self, message, file=None, **kwargs):
+        """Download media attached to a Message.
+
+        `file` may be a path, file-like, or None (auto name). Returns the
+        path or bytes. Extra kwargs (thumb, progress_callback) forwarded.
+        """
+        self._require_client()
+        return await self._client.download_media(
+            message, file=file, **kwargs,
+        )
+
+    async def download_file(self, input_location, file=None, **kwargs):
+        """Download raw file by InputFileLocation (advanced). Returns bytes
+        when `file` is None, otherwise writes to it."""
+        self._require_client()
+        return await self._client.download_file(
+            input_location, file=file, **kwargs,
+        )
+
+    async def upload_file(self, file, **kwargs):
+        """Upload a file and return its InputFile handle (for reuse in
+        send_file or raw TL calls)."""
+        self._require_client()
+        return await self._client.upload_file(file, **kwargs)
+
     # ---- transparent passthrough to Telethon ----
     # Any attribute not defined on VibeClient (or not a dunder / private
     # internal) is forwarded to the underlying TelegramClient. This makes
