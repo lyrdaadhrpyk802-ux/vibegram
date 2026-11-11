@@ -185,6 +185,49 @@ class VibeClient:
         )
         return msgs[0] if msgs else None
 
+    # ---- message management ----
+    async def edit_message(self, peer, msg_id, text=None, **kwargs):
+        """Edit an outgoing message. Returns the updated Message."""
+        self._require_client()
+        return await self._client.edit_message(peer, msg_id, text, **kwargs)
+
+    async def delete_messages(self, peer, msg_ids, revoke=True):
+        """Delete messages. `revoke=True` removes for everyone."""
+        self._require_client()
+        return await self._client.delete_messages(peer, msg_ids, revoke=revoke)
+
+    async def forward_messages(self, to_peer, msg_ids, from_peer=None):
+        """Forward messages to another chat. Returns list of new Messages."""
+        self._require_client()
+        return await self._client.forward_messages(
+            to_peer, msg_ids, from_peer=from_peer,
+        )
+
+    async def pin_message(self, peer, msg_id=None, notify=False):
+        """Pin a message in a chat. msg_id=None unpins the current pinned."""
+        self._require_client()
+        return await self._client.pin_message(peer, msg_id, notify=notify)
+
+    async def unpin_message(self, peer, msg_id=None):
+        """Unpin a message. msg_id=None removes the pinned message."""
+        self._require_client()
+        return await self._client.unpin_message(peer, msg_id)
+
+    async def send_read_acknowledge(self, peer, msg_id=None):
+        """Mark a chat (or a specific message) as read. Returns bool."""
+        self._require_client()
+        return await self._client.send_read_acknowledge(peer, msg_id)
+
+    def action(self, peer, action="typing", **kwargs):
+        """Typing/uploading indicator as async context manager.
+
+        Usage:
+            async with client.action(peer, "typing"):
+                await asyncio.sleep(2)
+        """
+        self._require_client()
+        return self._client.action(peer, action, **kwargs)
+
     # ---- transparent passthrough to Telethon ----
     # Any attribute not defined on VibeClient (or not a dunder / private
     # internal) is forwarded to the underlying TelegramClient. This makes
