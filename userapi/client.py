@@ -67,14 +67,18 @@ class VibeClient:
         self._connected = self._client.is_connected()
         return self._connected
 
-    async def disconnect(self):
-        self._connected = False
-        if self._client is not None:
-            try:
-                await self._client.disconnect()
-            except Exception:
-                pass
-            self._client = None
+    def disconnect(self):
+        # Telethon's disconnect() is sync but returns a coroutine that must
+        # be awaited. Keep the same signature for API parity.
+        async def _do():
+            self._connected = False
+            if self._client is not None:
+                try:
+                    await self._client.disconnect()
+                except Exception:
+                    pass
+                self._client = None
+        return _do()
 
     # ---- auth ----
     async def is_authorized(self):
@@ -391,6 +395,131 @@ class VibeClient:
         """Delete a chat from the dialog list (revoke=True also leaves it)."""
         self._require_client()
         return await self._client.delete_dialog(entity, revoke=revoke)
+
+    # ---- all remaining TelegramClient methods ----
+    # Grouped wrappers over the remaining 27 public TelegramClient methods.
+    # Sync vs async is matched to Telethon 1.45.0.
+    # Aliases are provided for is_user_authorized / send_code_request.
+
+    # -- aliases (existing methods with Telethon names) --
+    async def is_user_authorized(self):
+        return await self.is_authorized()
+
+    async def send_code_request(self, phone, *args, **kwargs):
+        return await self.request_code(phone, *args, **kwargs)
+
+    # -- event handlers --
+    def add_event_handler(self, callback, event=None):
+        self._require_client()
+        return self._client.add_event_handler(callback, event)
+
+    def remove_event_handler(self, callback, event=None):
+        self._require_client()
+        return self._client.remove_event_handler(callback, event)
+
+    def list_event_handlers(self):
+        self._require_client()
+        return self._client.list_event_handlers()
+
+    def on(self, event):
+        self._require_client()
+        return self._client.on(event)
+
+    def run_until_disconnected(self):
+        self._require_client()
+        return self._client.run_until_disconnected()
+
+    def conversation(self, *args, **kwargs):
+        self._require_client()
+        return self._client.conversation(*args, **kwargs)
+
+    # -- updates / sync --
+    async def catch_up(self):
+        self._require_client()
+        return await self._client.catch_up()
+
+    async def set_receive_updates(self, receive_updates):
+        self._require_client()
+        return await self._client.set_receive_updates(receive_updates)
+
+    # -- auth extras --
+    async def qr_login(self):
+        self._require_client()
+        return await self._client.qr_login()
+
+    async def sign_up(self, *args, **kwargs):
+        self._require_client()
+        return await self._client.sign_up(*args, **kwargs)
+
+    async def edit_2fa(self, *args, **kwargs):
+        self._require_client()
+        return await self._client.edit_2fa(*args, **kwargs)
+
+    # -- status --
+    def is_connected(self):
+        self._require_client()
+        return self._client.is_connected()
+
+    async def is_bot(self):
+        self._require_client()
+        return await self._client.is_bot()
+
+    # -- folders / takeout / stats --
+    async def edit_folder(self, *args, **kwargs):
+        self._require_client()
+        return await self._client.edit_folder(*args, **kwargs)
+
+    def takeout(self, *args, **kwargs):
+        self._require_client()
+        return self._client.takeout(*args, **kwargs)
+
+    async def end_takeout(self, *args, **kwargs):
+        self._require_client()
+        return await self._client.end_takeout(*args, **kwargs)
+
+    async def get_stats(self, *args, **kwargs):
+        self._require_client()
+        return await self._client.get_stats(*args, **kwargs)
+
+    # -- admin log --
+    async def get_admin_log(self, *args, **kwargs):
+        self._require_client()
+        return await self._client.get_admin_log(*args, **kwargs)
+
+    def iter_admin_log(self, *args, **kwargs):
+        self._require_client()
+        return self._client.iter_admin_log(*args, **kwargs)
+
+    # -- permissions --
+    async def get_permissions(self, *args, **kwargs):
+        self._require_client()
+        return await self._client.get_permissions(*args, **kwargs)
+
+    # -- downloads (iterator) --
+    def iter_download(self, *args, **kwargs):
+        self._require_client()
+        return self._client.iter_download(*args, **kwargs)
+
+    # -- inline / markup --
+    async def inline_query(self, *args, **kwargs):
+        self._require_client()
+        return await self._client.inline_query(*args, **kwargs)
+
+    def build_reply_markup(self, *args, **kwargs):
+        self._require_client()
+        return self._client.build_reply_markup(*args, **kwargs)
+
+    # -- startup --
+    def start(self, *args, **kwargs):
+        self._require_client()
+        return self._client.start(*args, **kwargs)
+
+    # -- proxy (overrides module-level, affects this instance) --
+    def set_proxy(self, proxy):
+        self._proxy = _coerce_proxy(proxy)
+        _set_ws_proxy(self._proxy)
+        if self._client is not None:
+            self._client.set_proxy(proxy)
 
     # ---- transparent passthrough to Telethon ----
     # Any attribute not defined on VibeClient (or not a dunder / private
