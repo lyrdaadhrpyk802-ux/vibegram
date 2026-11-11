@@ -293,6 +293,62 @@ class VibeClient:
             name = name.rsplit("/", 1)[-1]
         return await self._client.get_entity(name)
 
+    # ---- groups and channels ----
+    async def get_participants(self, entity, limit=None, **kwargs):
+        """List participants of a chat/channel as a list."""
+        self._require_client()
+        return await self._client.get_participants(entity, limit=limit, **kwargs)
+
+    def iter_participants(self, entity, limit=None, **kwargs):
+        """Async iterator over participants (returns AsyncIterator, not a
+        coroutine). Use: async for u in client.iter_participants(...): ..."""
+        self._require_client()
+        return self._client.iter_participants(entity, limit=limit, **kwargs)
+
+    async def kick_participant(self, entity, user):
+        """Remove a user from a group/channel."""
+        self._require_client()
+        return await self._client.kick_participant(entity, user)
+
+    async def edit_admin(self, entity, user, **kwargs):
+        """Grant/revoke admin rights. Keywords: is_admin=True/False, plus
+        admin-specific flags (change_info, post_messages, ...)."""
+        self._require_client()
+        return await self._client.edit_admin(entity, user, **kwargs)
+
+    async def edit_permissions(self, entity, user=None, until_date=None, **kwargs):
+        """Edit a user's permissions (default: silent). Pass view_messages
+        and related booleans to override."""
+        self._require_client()
+        return await self._client.edit_permissions(
+            entity, user, until_date=until_date, **kwargs,
+        )
+
+    async def _to_input_channel(self, peer):
+        """Convert any peer to InputChannel (required by channels.* methods)."""
+        from telethon.tl.types import InputChannel, InputPeerChannel
+        ent = await self._client.get_input_entity(peer)
+        if isinstance(ent, InputPeerChannel):
+            return InputChannel(
+                channel_id=ent.channel_id,
+                access_hash=ent.access_hash,
+            )
+        return ent
+
+    async def join_channel(self, channel):
+        """Join a channel/supergroup by id, username, or invite link."""
+        from telethon.tl.functions.channels import JoinChannelRequest
+        self._require_client()
+        input_channel = await self._to_input_channel(channel)
+        return await self._client(JoinChannelRequest(input_channel))
+
+    async def leave_channel(self, channel):
+        """Leave a channel/supergroup."""
+        from telethon.tl.functions.channels import LeaveChannelRequest
+        self._require_client()
+        input_channel = await self._to_input_channel(channel)
+        return await self._client(LeaveChannelRequest(input_channel))
+
     # ---- transparent passthrough to Telethon ----
     # Any attribute not defined on VibeClient (or not a dunder / private
     # internal) is forwarded to the underlying TelegramClient. This makes
