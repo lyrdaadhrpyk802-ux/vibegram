@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Test outputs
+*.log
+*.pcap
+*.pcapng
+pcap_stream.bin
+server_resp.bin
+*.session
+
+# Secrets and env
+.env
+*.env
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Local config
+config_local.*
+vendor_telethon/

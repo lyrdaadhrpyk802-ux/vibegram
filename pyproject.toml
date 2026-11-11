@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyvibe"
+version = "0.1.0"
+description = "Python client library for Vibe Messenger (MTProto over WebSocket)"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Ali VEX", email = "lyrdaadhrpyk802@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "websockets>=13.0",
+    "pycryptodome>=3.20",
+]
+
+[project.optional-dependencies]
+dev = [
+    "scapy>=2.5",
+    "pytest>=7.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["userapi*", "botapi*"]
+
+[tool.pytest.ini_options]
+testpaths = ["userapi/tests"]
