@@ -1,6 +1,6 @@
 # ============================================
 #  userapi/client.py - Vibe Messenger client
-#  Supports SOCKS5/HTTP proxy for IP bypass.
+#  High-level wrapper over Telethon with Vibe custom auth.
 #  All code and comments are English. No emojis.
 # ============================================
 import asyncio
@@ -26,9 +26,15 @@ DEFAULT_DC_PORT = 443
 class VibeClient:
     """High-level client for Vibe Messenger.
 
-    Args:
-        proxy: optional, URL string ('socks5://127.0.0.1:9050')
-               or Telethon tuple/dict. Routed through the WebSocket.
+    Usage:
+        client = VibeClient()
+        await client.connect()
+        if not await client.is_authorized():
+            await client.request_code(phone)
+            await client.sign_in(phone, code)
+        me = await client.get_me()
+        await client.send_message("me", "hello")
+        await client.disconnect()
     """
 
     def __init__(self, session_path=None, dc_host=DEFAULT_DC_HOST,
@@ -40,12 +46,11 @@ class VibeClient:
         self._client = None
         self._connected = False
 
+    # ---- lifecycle ----
     async def connect(self, timeout=20):
-        """Open connection to Vibe DC. Loads RSA keys first."""
         load_all_keys()
         if self._proxy:
             _set_ws_proxy(self._proxy)
-            print(f"[client] proxy set: {self._proxy}")
         else:
             _set_ws_proxy(None)
         self._client = TelegramClient(
@@ -59,41 +64,70 @@ class VibeClient:
         self._connected = self._client.is_connected()
         return self._connected
 
-    async def login(self, phone, code_callback=None, password_callback=None):
-        if not self._connected:
-            raise RuntimeError("call connect() first")
-        await self._client.send_code_request(phone)
-        if code_callback is None:
-            code = input("Enter the code you received: ").strip()
-        else:
-            code = await _maybe_await(code_callback())
-        try:
-            await self._client.sign_in(phone=phone, code=code)
-        except Exception as e:
-            if "password" in str(e).lower() and password_callback is not None:
-                pw = await _maybe_await(password_callback())
-                await self._client.sign_in(password=pw)
-            else:
-                raise
-        return await self.get_me()
-
-    async def get_me(self):
-        return await self._client.get_me()
-
-    async def send_message(self, peer, text):
-        return await self._client.send_message(peer, text)
-
-    async def get_dialogs(self, limit=20):
-        return await self._client.get_dialogs(limit=limit)
-
     async def disconnect(self):
         self._connected = False
         if self._client is not None:
             try:
                 await self._client.disconnect()
-            except Exception as e:
-                print(f"[client] error: {e}")
+            except Exception:
+                pass
             self._client = None
+
+    # ---- auth ----
+    async def is_authorized(self):
+        self._require_client()
+        return await self._client.is_user_authorized()
+
+    async def request_code(self, phone):
+        self._require_client()
+        return await self._client.send_code_request(phone)
+
+    async def sign_in(self, phone, code, password=None):
+        self._require_client()
+        try:
+            return await self._client.sign_in(phone=phone, code=code)
+        except Exception as e:
+            if password is not None and "password" in str(e).lower():
+                return await self._client.sign_in(password=password)
+            raise
+
+    async def log_out(self):
+        self._require_client()
+        return await self._client.log_out()
+
+    # ---- account ----
+    async def get_me(self):
+        self._require_client()
+        return await self._client.get_me()
+
+    # ---- messaging ----
+    async def send_message(self, peer, text, **kwargs):
+        self._require_client()
+        return await self._client.send_message(peer, text, **kwargs)
+
+    async def get_messages(self, peer, limit=20):
+        self._require_client()
+        return await self._client.get_messages(peer, limit=limit)
+
+    async def get_dialogs(self, limit=20):
+        self._require_client()
+        return await self._client.get_dialogs(limit=limit)
+
+    async def iter_messages(self, peer, limit=None):
+        self._require_client()
+        async for msg in self._client.iter_messages(peer, limit=limit):
+            yield msg
+
+    # ---- escape hatch ----
+    @property
+    def raw(self):
+        """Underlying Telethon TelegramClient for advanced usage."""
+        self._require_client()
+        return self._client
+
+    def _require_client(self):
+        if self._client is None or not self._connected:
+            raise RuntimeError("call connect() first")
 
 
 async def _maybe_await(value):
