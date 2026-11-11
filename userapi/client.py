@@ -125,6 +125,38 @@ class VibeClient:
         self._require_client()
         return self._client
 
+    # ---- transparent passthrough to Telethon ----
+    # Any attribute not defined on VibeClient (or not a dunder / private
+    # internal) is forwarded to the underlying TelegramClient. This makes
+    # the entire Telethon API available directly, e.g.:
+    #     await client.send_file("me", "photo.jpg")
+    #     await client.get_entity("@somechannel")
+    #     await client.delete_messages(peer, [msg_id])
+    _INTERNAL_ATTRS = frozenset({
+        "_client", "_connected", "_session", "_proxy",
+        "_dc_host", "_dc_port", "_INTERNAL_ATTRS",
+    })
+
+    def __getattr__(self, name):
+        # Only called when normal lookup fails.
+        if name.startswith("__") and name.endswith("__"):
+            raise AttributeError(name)
+        if name in VibeClient._INTERNAL_ATTRS:
+            raise AttributeError(name)
+
+        client = self.__dict__.get("_client")
+        if client is None:
+            raise RuntimeError(
+                f"attribute {name!r} unavailable: call connect() first"
+            )
+
+        try:
+            return getattr(client, name)
+        except AttributeError:
+            raise AttributeError(
+                f"{type(self).__name__!r} object has no attribute {name!r}"
+            ) from None
+
     def _require_client(self):
         if self._client is None or not self._connected:
             raise RuntimeError("call connect() first")
