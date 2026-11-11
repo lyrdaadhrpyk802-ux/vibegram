@@ -14,7 +14,6 @@ from userapi.connection.telethon_ws import (
     _coerce_proxy,
 )
 from userapi.connection.vibe_keys import load_all_keys
-from userapi.session import Session
 
 
 API_ID = 4
@@ -39,7 +38,11 @@ class VibeClient:
 
     def __init__(self, session_path=None, dc_host=DEFAULT_DC_HOST,
                  dc_port=DEFAULT_DC_PORT, proxy=None):
-        self._session = Session(session_path or Path.home() / ".vibe_session.json")
+        # Telethon appends .session itself; store the base path only.
+        base = Path(session_path) if session_path else Path.home() / ".vibe_session"
+        if base.suffix in (".session", ".json"):
+            base = base.with_suffix("")
+        self._session_path = base
         self._dc_host = dc_host
         self._dc_port = dc_port
         self._proxy = _coerce_proxy(proxy)
@@ -54,7 +57,7 @@ class VibeClient:
         else:
             _set_ws_proxy(None)
         self._client = TelegramClient(
-            self._session.path.with_suffix(""),
+            str(self._session_path),
             API_ID,
             API_HASH,
             connection=ConnectionWebSocketAbridgedObfuscated,
@@ -133,7 +136,7 @@ class VibeClient:
     #     await client.get_entity("@somechannel")
     #     await client.delete_messages(peer, [msg_id])
     _INTERNAL_ATTRS = frozenset({
-        "_client", "_connected", "_session", "_proxy",
+        "_client", "_connected", "_session_path", "_proxy",
         "_dc_host", "_dc_port", "_INTERNAL_ATTRS",
     })
 
