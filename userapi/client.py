@@ -128,6 +128,63 @@ class VibeClient:
         self._require_client()
         return self._client
 
+    # ---- extended message methods (raw TL) ----
+    async def get_replies(self, peer, msg_id, limit=20):
+        """Fetch replies to a message (forum topic or comment section)."""
+        from telethon.tl.functions.messages import GetRepliesRequest
+        self._require_client()
+        peer_entity = await self._client.get_input_entity(peer)
+        result = await self._client(GetRepliesRequest(
+            peer=peer_entity,
+            msg_id=msg_id,
+            offset_id=0,
+            offset_date=None,
+            add_offset=0,
+            limit=limit,
+            max_id=0,
+            min_id=0,
+            hash=0,
+        ))
+        return result.messages
+
+    async def send_reaction(self, peer, msg_id, emoticon=None,
+                            custom_document_id=None, big=False):
+        """Send or clear a reaction.
+
+        Args:
+            peer: chat / channel / user
+            msg_id: target message id
+            emoticon: unicode emoji, e.g. "👍". None clears all reactions.
+            custom_document_id: premium custom emoji document id (overrides emoticon).
+            big: render as large animation.
+        """
+        from telethon.tl.functions.messages import SendReactionRequest
+        from telethon.tl.types import ReactionEmoji, ReactionCustomEmoji
+        self._require_client()
+        peer_entity = await self._client.get_input_entity(peer)
+        if custom_document_id is not None:
+            reaction = [ReactionCustomEmoji(document_id=custom_document_id)]
+        elif emoticon is not None:
+            reaction = [ReactionEmoji(emoticon=emoticon)]
+        else:
+            reaction = None  # clears
+        return await self._client(SendReactionRequest(
+            peer=peer_entity,
+            msg_id=msg_id,
+            big=True if big else None,
+            add_to_recent=True,
+            reaction=reaction,
+        ))
+
+    async def get_pinned_message(self, peer):
+        """Return the pinned message in a chat, or None."""
+        from telethon.tl.types import InputMessagesFilterPinned
+        self._require_client()
+        msgs = await self._client.get_messages(
+            peer, limit=1, filter=InputMessagesFilterPinned,
+        )
+        return msgs[0] if msgs else None
+
     # ---- transparent passthrough to Telethon ----
     # Any attribute not defined on VibeClient (or not a dunder / private
     # internal) is forwarded to the underlying TelegramClient. This makes
@@ -148,17 +205,28 @@ class VibeClient:
             raise AttributeError(name)
 
         client = self.__dict__.get("_client")
-        if client is None:
-            raise RuntimeError(
-                f"attribute {name!r} unavailable: call connect() first"
-            )
 
+        if client is not None:
+            try:
+                return getattr(client, name)
+            except AttributeError:
+                raise AttributeError(
+                    f"{type(self).__name__!r} object has no attribute {name!r}"
+                ) from None
+
+        # Not connected yet. Distinguish "exists on Telethon, needs connection"
+        # from "does not exist at all" so that hasattr() works correctly.
         try:
-            return getattr(client, name)
+            from telethon import TelegramClient
+            getattr(TelegramClient, name)
         except AttributeError:
             raise AttributeError(
                 f"{type(self).__name__!r} object has no attribute {name!r}"
             ) from None
+
+        raise AttributeError(
+            f"attribute {name!r} requires an active connection: call connect() first"
+        )
 
     def _require_client(self):
         if self._client is None or not self._connected:
