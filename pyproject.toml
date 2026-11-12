@@ -3,11 +3,12 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyvibe"
+name = "vibegram"
 version = "1.0.0"
 description = "Python client library for Vibe Messenger (MTProto over WebSocket)"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Ali VEX", email = "lyrdaadhrpyk802@gmail.com" }
 ]
@@ -30,7 +31,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["userapi*", "botapi*"]
+include = ["userapi*", "botapi*", "scripts*"]
 
 [tool.pytest.ini_options]
 testpaths = ["userapi/tests"]
