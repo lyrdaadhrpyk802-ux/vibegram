@@ -575,6 +575,12 @@ _count_new, _count_skipped = _bind_account(VibeClient)
 print(f"[account] attached {_count_new} methods ({_count_skipped} already present)")
 
 
+# ---- attach messages methods ----
+from userapi.messages import bind_to as _bind_messages
+_m_new, _m_skipped = _bind_messages(VibeClient)
+print(f"[messages] attached {_m_new} methods ({_m_skipped} already present)")
+
+
 async def _maybe_await(value):
     if asyncio.iscoroutine(value):
         return await value
