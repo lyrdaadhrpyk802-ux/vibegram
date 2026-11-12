@@ -10,9 +10,8 @@ from userapi import VibeClient
 
 
 async def main():
-    c = VibeClient()
-    try:
-        await c.connect()
+    # با استفاده از async with، اتصال و قطع شدن به صورت خودکار مدیریت می‌شود
+    async with VibeClient() as c:
         print("[+] اتصال به Vibe برقرار شد")
 
         if await c.is_authorized():
@@ -40,8 +39,6 @@ async def main():
 
         me = await c.get_me()
         print(f"[+] خوش آمدید: {me.first_name} (@{getattr(me, 'username', '-')})")
-    finally:
-        await c.disconnect()
 
 
 if __name__ == "__main__":

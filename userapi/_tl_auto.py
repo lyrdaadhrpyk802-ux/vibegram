@@ -50,6 +50,18 @@ def make_wrapper(tl_name, tl_cls, prefix, channel_fix=False):
         self._require_client()
         if has_hash and not args and "hash" not in kwargs:
             kwargs["hash"] = 0
+
+        # Intelligent auto-conversion of entities (strings/ints -> InputPeer/InputChannel)
+        for key in ("peer", "channel", "entity", "user", "from_peer", "to_peer"):
+            if key in kwargs and isinstance(kwargs[key], (str, int)):
+                try:
+                    if key == "channel":
+                        kwargs[key] = await _ensure_input_channel(self._client, kwargs[key])
+                    else:
+                        kwargs[key] = await self._client.get_input_entity(kwargs[key])
+                except Exception:
+                    pass  # Let Telethon handle the error if resolution fails
+
         if channel_fix and has_channel_param:
             key = None
             for k in ("channel", "peer"):
@@ -58,6 +70,7 @@ def make_wrapper(tl_name, tl_cls, prefix, channel_fix=False):
                     break
             if key is not None:
                 kwargs[key] = await _ensure_input_channel(self._client, kwargs[key])
+                
         return await self._client(tl_cls(*args, **kwargs))
 
     wrapper.__name__ = snake(tl_name)

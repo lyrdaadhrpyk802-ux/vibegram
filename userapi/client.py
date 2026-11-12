@@ -50,6 +50,13 @@ class VibeClient:
         self._client = None
         self._connected = False
 
+    async def __aenter__(self):
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.disconnect()
+
     # ---- lifecycle ----
     async def connect(self, timeout=20):
         load_all_keys()
@@ -90,14 +97,43 @@ class VibeClient:
         self._require_client()
         return await self._client.send_code_request(phone)
 
-    async def sign_in(self, phone, code, password=None):
+    async def sign_in(self, phone=None, code=None, password=None, phone_code_hash=None):
         self._require_client()
+        from telethon.errors import SessionPasswordNeededError
         try:
-            return await self._client.sign_in(phone=phone, code=code)
-        except Exception as e:
-            if password is not None and "password" in str(e).lower():
+            if password is not None and code is None:
+                return await self._client.sign_in(password=password)
+            return await self._client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+        except SessionPasswordNeededError:
+            if password is not None:
                 return await self._client.sign_in(password=password)
             raise
+
+    async def login(self, phone, code_callback=None, password_callback=None):
+        """High-level login that automatically detects and handles 2FA."""
+        from telethon.errors import SessionPasswordNeededError
+
+        if await self.is_authorized():
+            return await self.get_me()
+
+        await self.request_code(phone)
+
+        if code_callback is None:
+            code = input("Enter the OTP code: ").strip()
+        else:
+            code = await _maybe_await(code_callback())
+
+        try:
+            await self._client.sign_in(phone=phone, code=code)
+        except SessionPasswordNeededError:
+            if password_callback is None:
+                pw = input("2FA Password required. Enter password: ").strip()
+            else:
+                pw = await _maybe_await(password_callback())
+            await self._client.sign_in(password=pw)
+
+        return await self.get_me()
+
 
     async def log_out(self):
         self._require_client()
@@ -113,9 +149,9 @@ class VibeClient:
         self._require_client()
         return await self._client.send_message(peer, text, **kwargs)
 
-    async def get_messages(self, peer, limit=20):
+    async def get_messages(self, peer, limit=20, **kwargs):
         self._require_client()
-        return await self._client.get_messages(peer, limit=limit)
+        return await self._client.get_messages(peer, limit=limit, **kwargs)
 
     async def get_dialogs(self, limit=20):
         self._require_client()
@@ -240,7 +276,7 @@ class VibeClient:
 
     # ---- files and media ----
     async def send_file(self, peer, file, caption=None, **kwargs):
-        """Send photo/video/document/voice.
+        """Send photo/video/document/voice. `file` can be a local path, bytes, or an HTTP URL.
 
         `file` may be a path, bytes, file-like, or URL. Any extra keyword
         args are forwarded to Telethon (force_document, voice_note,
@@ -526,6 +562,183 @@ class VibeClient:
         _set_ws_proxy(self._proxy)
         if self._client is not None:
             self._client.set_proxy(proxy)
+
+    # ---- convenience shortcuts ----
+    async def reply(self, peer, msg_id, text, **kwargs):
+        """Reply to a specific message."""
+        return await self.send_message(peer, text, reply_to=msg_id, **kwargs)
+
+    async def get_last_message(self, peer):
+        """Get the most recent message in a chat, or None."""
+        msgs = await self.get_messages(peer, limit=1)
+        return msgs[0] if msgs else None
+
+    async def send_photo(self, peer, file, caption=None, **kwargs):
+        """Send an image file."""
+        kwargs["force_document"] = False
+        return await self.send_file(peer, file, caption=caption, **kwargs)
+
+    async def send_document(self, peer, file, caption=None, **kwargs):
+        """Send a file as a document (no compression)."""
+        kwargs["force_document"] = True
+        return await self.send_file(peer, file, caption=caption, **kwargs)
+
+    async def send_voice(self, peer, file, caption=None, **kwargs):
+        """Send a voice note."""
+        kwargs["voice_note"] = True
+        return await self.send_file(peer, file, caption=caption, **kwargs)
+
+    async def set_bio(self, about):
+        """Set your profile biography."""
+        return await self.update_profile(about=about)
+
+    async def set_username(self, username):
+        """Set or remove (pass empty string) your username."""
+        return await self.update_username(username)
+
+    async def clear_history(self, peer, revoke=True):
+        """Clear the chat history for a specific chat."""
+        from telethon.tl.functions.messages import DeleteHistoryRequest
+        self._require_client()
+        entity = await self._client.get_input_entity(peer)
+        return await self._client(DeleteHistoryRequest(peer=entity, max_id=0, just_clear=not revoke))
+
+    async def delete_chat(self, peer, revoke=True):
+        """Leave the chat and delete its history."""
+        return await self.delete_dialog(peer, revoke=revoke)
+
+    async def get_user_status(self, user):
+        """Get a human-readable status for a user (online, offline, recently, etc)."""
+        u = await self.get_entity(user)
+        status = getattr(u, "status", None)
+        if status is None:
+            return "unknown"
+        name = type(status).__name__
+        if name == "UserStatusOnline":
+            return "online"
+        if name == "UserStatusOffline":
+            return "offline"
+        if name == "UserStatusRecently":
+            return "recently"
+        if name == "UserStatusLastWeek":
+            return "last_week"
+        if name == "UserStatusLastMonth":
+            return "last_month"
+        return name
+
+    # ---- chat management shortcuts ----
+    async def get_pinned_messages(self, peer, limit=20):
+        """Get all pinned messages in a chat."""
+        from telethon.tl.types import InputMessagesFilterPinned
+        self._require_client()
+        return await self.get_messages(peer, limit=limit, filter=InputMessagesFilterPinned())
+
+    async def get_chat_invite_link(self, peer):
+        """Create or get the primary invite link for a group/channel."""
+        from telethon.tl.functions.messages import ExportChatInviteRequest
+        self._require_client()
+        return await self._client(ExportChatInviteRequest(peer=peer))
+
+    async def join_chat_by_link(self, invite_link):
+        """Join a chat using an invite link (t.me/... or +hash)."""
+        from telethon.tl.functions.messages import ImportChatInviteRequest
+        from telethon.tl.functions.channels import JoinChannelRequest
+        self._require_client()
+        if "joinchat/" in invite_link or "+" in invite_link:
+            hash_part = invite_link.split("/")[-1].replace("+", "")
+            return await self._client(ImportChatInviteRequest(hash=hash_part))
+        else:
+            return await self._client(JoinChannelRequest(channel=invite_link))
+
+    async def archive_chat(self, peer):
+        """Archive a chat."""
+        from telethon.tl.functions.folders import EditPeerFoldersRequest
+        from telethon.tl.types import InputFolderPeer
+        self._require_client()
+        inp = await self._client.get_input_entity(peer)
+        return await self._client(EditPeerFoldersRequest(folder_peers=[InputFolderPeer(peer=inp, folder_id=1)]))
+
+    async def unarchive_chat(self, peer):
+        """Unarchive a chat."""
+        from telethon.tl.functions.folders import EditPeerFoldersRequest
+        from telethon.tl.types import InputFolderPeer
+        self._require_client()
+        inp = await self._client.get_input_entity(peer)
+        return await self._client(EditPeerFoldersRequest(folder_peers=[InputFolderPeer(peer=inp, folder_id=0)]))
+
+    async def mute_chat(self, peer):
+        """Mute chat notifications."""
+        from telethon.tl.functions.account import UpdateNotifySettingsRequest
+        from telethon.tl.types import InputNotifyPeer, InputPeerNotifySettings
+        self._require_client()
+        inp = await self._client.get_input_entity(peer)
+        return await self._client(UpdateNotifySettingsRequest(
+            peer=InputNotifyPeer(peer=inp),
+            settings=InputPeerNotifySettings(show_previews=False, silent=True, mute_until=None)
+        ))
+
+    async def unmute_chat(self, peer):
+        """Unmute chat notifications."""
+        from telethon.tl.functions.account import UpdateNotifySettingsRequest
+        from telethon.tl.types import InputNotifyPeer, InputPeerNotifySettings
+        self._require_client()
+        inp = await self._client.get_input_entity(peer)
+        return await self._client(UpdateNotifySettingsRequest(
+            peer=InputNotifyPeer(peer=inp),
+            settings=InputPeerNotifySettings(show_previews=True, silent=False)
+        ))
+
+    # ---- drafts ----
+    async def save_draft(self, peer, text):
+        """Save a draft message in a chat."""
+        from telethon.tl.functions.messages import SaveDraftRequest
+        self._require_client()
+        inp = await self._client.get_input_entity(peer)
+        return await self._client(SaveDraftRequest(peer=inp, message=text, no_webpage=True))
+
+    async def clear_draft(self, peer):
+        """Clear the draft message in a chat."""
+        return await self.save_draft(peer, "")
+
+    # ---- users ----
+    async def get_common_chats(self, user):
+        """Get common chats with a specific user."""
+        full = await self.get_full_user(user)
+        return getattr(full.full_user, "common_chats_count", 0)
+
+    async def block_user(self, user):
+        """Block a user."""
+        from telethon.tl.functions.contacts import BlockRequest
+        self._require_client()
+        inp = await self._client.get_input_entity(user)
+        return await self._client(BlockRequest(id=inp))
+
+    async def unblock_user(self, user):
+        """Unblock a user."""
+        from telethon.tl.functions.contacts import UnblockRequest
+        self._require_client()
+        inp = await self._client.get_input_entity(user)
+        return await self._client(UnblockRequest(id=inp))
+
+    # ---- event handling ----
+    def on_message(self, func=None, chats=None):
+        """Decorator to listen for new messages.
+        Usage:
+            @client.on_message(chats="me")
+            async def handler(event):
+                print(event.raw_text)
+        """
+        from telethon import events
+        self._require_client()
+
+        def decorator(f):
+            event = events.NewMessage(chats=chats)
+            self._client.add_event_handler(f, event)
+            return f
+
+        if func:
+            return decorator(func)
+        return decorator
 
     # ---- transparent passthrough to Telethon ----
     # Any attribute not defined on VibeClient (or not a dunder / private
