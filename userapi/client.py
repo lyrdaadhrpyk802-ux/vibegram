@@ -598,6 +598,27 @@ _p_new, _p_skipped = _bind_photos(VibeClient)
 print(f"[photos] attached {_p_new} methods ({_p_skipped} already present)")
 
 
+# ---- attach channels methods ----
+from userapi.channels import bind_to as _bind_channels
+_ch_new, _ch_skipped = _bind_channels(VibeClient)
+print(f"[channels] attached {_ch_new} methods ({_ch_skipped} already present)")
+
+# ---- attach chatlists methods ----
+from userapi.chatlists import bind_to as _bind_chatlists
+_cl_new, _cl_skipped = _bind_chatlists(VibeClient)
+print(f"[chatlists] attached {_cl_new} methods ({_cl_skipped} already present)")
+
+# ---- attach communities methods ----
+from userapi.communities import bind_to as _bind_communities
+_cm_new, _cm_skipped = _bind_communities(VibeClient)
+print(f"[communities] attached {_cm_new} methods ({_cm_skipped} already present)")
+
+# ---- attach folders methods ----
+from userapi.folders import bind_to as _bind_folders
+_f_new, _f_skipped = _bind_folders(VibeClient)
+print(f"[folders] attached {_f_new} methods ({_f_skipped} already present)")
+
+
 async def _maybe_await(value):
     if asyncio.iscoroutine(value):
         return await value
