@@ -49,5 +49,17 @@ asyncio.run(main())
 - VIBE_COMPAT.md - Feature support matrix.
 - examples/ - 11 guided examples with Persian comments.
 
+
+## Development Notes (Project Origin)
+
+This library was entirely conceived, reverse-engineered, and developed on an **Android device using Termux**, without access to a traditional PC or root privileges.
+
+The challenge involved analyzing captured network traffic to reverse-engineer Vibe's custom authentication scheme (RSA and obfuscated2), successfully implementing it in Python, and wrapping it around the Telethon framework to provide over 850 high-level methods. 
+
+This project proves that a complete, production-ready SDK can be built entirely from a mobile environment.
+
+> **یادداشت توسعه:**
+> این کتابخانه به طور کامل روی یک گوشی اندروید (در محیط Termux و بدون روت) و بدون دسترسی به کامپیوتر نوشته شده است. چالش اصلی، مهندسی معکوس الگوریتم احراز هویت اختصاصی سرور وایب بود که با تحلیل ترافیک شبکه انجام شد. این پروژه اثبات می‌کند که می‌توان یک کتابخانه حرفه‌ای و کامل را تنها با یک گوشی موبایل توسعه داد.
+
 ## License
 MIT License
