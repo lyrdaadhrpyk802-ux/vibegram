@@ -90,7 +90,8 @@ def collect(namespace_module, prefix, channel_fix=False):
 
 def bind(client_cls, namespace_module, prefix, extra_mixin=None, channel_fix=False):
     if extra_mixin is not None:
-        for name, fn in extra_mixin.__dict__.items():
+        mixin_cls = extra_mixin if isinstance(extra_mixin, type) else type(extra_mixin)
+        for name, fn in mixin_cls.__dict__.items():
             if name.startswith("__") or name.startswith("_"):
                 continue
             if not callable(fn):
