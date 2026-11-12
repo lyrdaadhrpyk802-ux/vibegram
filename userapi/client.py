@@ -155,6 +155,11 @@ class VibeClient:
                             custom_document_id=None, big=False):
         """Send or clear a reaction.
 
+        NOTE: on Vibe, reactions require a premium account; a
+        PremiumAccountRequiredError is raised otherwise (Telegram does not
+        require premium for reactions). Callers should catch it and inform
+        the user.
+
         Args:
             peer: chat / channel / user
             msg_id: target message id

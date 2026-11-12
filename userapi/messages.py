@@ -68,15 +68,33 @@ class MessagesMixin:
 
     # -- send (additional shortcuts not already on VibeClient) --
     async def send_media(self, peer, media, caption=None, **kwargs):
-        """Send pre-uploaded media (InputMedia). For local files use send_file."""
+        """Send pre-uploaded media (InputMedia). For local files use send_file.
+
+        Returns the created Message (extracted from the Updates response).
+        """
+        import os
         from telethon.tl.functions.messages import SendMediaRequest
+        from telethon.tl.types import UpdateNewMessage, UpdateNewChannelMessage
         self._require_client()
         entity = await self._client.get_input_entity(peer)
-        return await self._client(SendMediaRequest(
+        random_id = kwargs.pop("random_id", None)
+        if random_id is None or random_id == 0:
+            random_id = int.from_bytes(os.urandom(8), "big", signed=True)
+        result = await self._client(SendMediaRequest(
             peer=entity, media=media,
             message=caption or "",
-            random_id=0, **kwargs,
+            random_id=random_id, **kwargs,
         ))
+        # Normalize to Message when possible
+        if hasattr(result, "updates"):
+            for u in result.updates:
+                if isinstance(u, (UpdateNewMessage, UpdateNewChannelMessage)):
+                    return u.message
+        # Scheduled / short-sent responses
+        from telethon.tl.types import UpdateShortSentMessage
+        if isinstance(result, UpdateShortSentMessage):
+            return result
+        return result
 
     # -- history --
     async def get_history(self, peer, limit=20, **kwargs):
