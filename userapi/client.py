@@ -619,6 +619,13 @@ _f_new, _f_skipped = _bind_folders(VibeClient)
 print(f"[folders] attached {_f_new} methods ({_f_skipped} already present)")
 
 
+# ---- attach extra TL namespaces ----
+from userapi.extra import bind_all as _bind_extra
+_extra_summary = _bind_extra(VibeClient)
+for _ns, _new, _skip, _status in _extra_summary:
+    print(f"[extra] {_ns:10s} new={_new:>3d} skipped={_skip:>3d} ({_status})")
+
+
 async def _maybe_await(value):
     if asyncio.iscoroutine(value):
         return await value
