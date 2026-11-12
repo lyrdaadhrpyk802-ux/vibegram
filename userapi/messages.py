@@ -157,11 +157,44 @@ class MessagesMixin:
         ))
 
     # -- search --
-    async def search_global(self, query, limit=20):
-        """Search messages across all chats. Uses contacts.searchMessages."""
+    async def search_peers(self, query, limit=20):
+        """Search users/chats by name or username (global peer search).
+
+        Returns a `Found` object with `results`, `my_results`, `chats`, `users`.
+        """
         from telethon.tl.functions.contacts import SearchRequest
         self._require_client()
-        result = await self._client(SearchRequest(q=query, limit=limit))
+        return await self._client(SearchRequest(q=query, limit=limit))
+
+    # Backwards-compatible alias
+    async def search_global(self, query, limit=20):
+        """Deprecated alias for search_peers. Returns Found, not messages."""
+        return await self.search_peers(query, limit=limit)
+
+    async def search_messages(self, peer, query, limit=20, offset_id=0, **kwargs):
+        """Search messages inside a specific chat.
+
+        For global message search across all chats, pass peer="me" (Vibe
+        backend may or may not support it).
+        """
+        from telethon.tl.functions.messages import SearchRequest
+        self._require_client()
+        entity = await self._client.get_input_entity(peer)
+        result = await self._client(SearchRequest(
+            peer=entity,
+            q=query,
+            from_id=None,
+            top_msg_id=None,
+            filter=None,
+            min_date=None,
+            max_date=None,
+            offset_id=offset_id,
+            add_offset=0,
+            limit=limit,
+            max_id=0,
+            min_id=0,
+            hash=0,
+        ))
         return result.messages
 
 
