@@ -32,3 +32,4 @@ Thumbs.db
 # Local config
 config_local.*
 vendor_telethon/
+backups/
