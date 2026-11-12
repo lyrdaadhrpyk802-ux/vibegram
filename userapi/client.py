@@ -581,6 +581,12 @@ _m_new, _m_skipped = _bind_messages(VibeClient)
 print(f"[messages] attached {_m_new} methods ({_m_skipped} already present)")
 
 
+# ---- attach contacts methods ----
+from userapi.contacts import bind_to as _bind_contacts
+_c_new, _c_skipped = _bind_contacts(VibeClient)
+print(f"[contacts] attached {_c_new} methods ({_c_skipped} already present)")
+
+
 async def _maybe_await(value):
     if asyncio.iscoroutine(value):
         return await value
