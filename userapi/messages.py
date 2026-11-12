@@ -21,8 +21,17 @@ def _snake(name):
 
 
 def _make_async_wrapper(tl_name, tl_cls):
+    _tl_has_hash = False
+    try:
+        _sig = inspect.signature(tl_cls.__init__)
+        if "hash" in _sig.parameters:
+            _tl_has_hash = True
+    except (ValueError, TypeError):
+        pass
     async def wrapper(self, *args, **kwargs):
         self._require_client()
+        if _tl_has_hash and not args and "hash" not in kwargs:
+            kwargs["hash"] = 0
         return await self._client(tl_cls(*args, **kwargs))
     wrapper.__name__ = _snake(tl_name)
     wrapper.__qualname__ = f"Messages.{wrapper.__name__}"
