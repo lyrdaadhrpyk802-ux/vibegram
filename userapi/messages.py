@@ -171,21 +171,23 @@ class MessagesMixin:
         """Deprecated alias for search_peers. Returns Found, not messages."""
         return await self.search_peers(query, limit=limit)
 
-    async def search_messages(self, peer, query, limit=20, offset_id=0, **kwargs):
+    async def search_messages(self, peer, query, limit=20, offset_id=0,
+                              message_filter=None, **kwargs):
         """Search messages inside a specific chat.
 
-        For global message search across all chats, pass peer="me" (Vibe
-        backend may or may not support it).
+        `message_filter` may be any InputMessagesFilter* instance; when
+        None, InputMessagesFilterEmpty is used (text search, no filter).
         """
         from telethon.tl.functions.messages import SearchRequest
+        from telethon.tl.types import InputMessagesFilterEmpty
         self._require_client()
         entity = await self._client.get_input_entity(peer)
+        if message_filter is None:
+            message_filter = InputMessagesFilterEmpty()
         result = await self._client(SearchRequest(
             peer=entity,
             q=query,
-            from_id=None,
-            top_msg_id=None,
-            filter=None,
+            filter=message_filter,
             min_date=None,
             max_date=None,
             offset_id=offset_id,
@@ -194,6 +196,8 @@ class MessagesMixin:
             max_id=0,
             min_id=0,
             hash=0,
+            from_id=None,
+            top_msg_id=None,
         ))
         return result.messages
 
