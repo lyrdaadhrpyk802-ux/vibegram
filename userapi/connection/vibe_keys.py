@@ -4,6 +4,7 @@
 #  All code and comments are English. No emojis.
 # ============================================
 from telethon.crypto import rsa
+from userapi._log import info as _vlog
 
 
 VIBE_FINGERPRINT = -7080122280541503745
@@ -48,7 +49,7 @@ def load_all_keys():
     """Register all Vibe PEM keys with Telethon under their real fingerprints."""
     for pem in PEMS:
         rsa.add_key(pem, old=False)
-    print(f"[+] Registered {len(PEMS)} PEM keys with Telethon")
+    _vlog(f"[+] Registered {len(PEMS)} PEM keys with Telethon")
 
 
 def check_fingerprints():

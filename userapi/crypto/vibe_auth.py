@@ -11,6 +11,7 @@ import struct
 
 from telethon.crypto import rsa, AES
 from telethon.tl.types import PQInnerData
+from userapi._log import info as _vlog
 
 
 VIBE_FINGERPRINT = -7080122280541503745
@@ -84,4 +85,4 @@ def apply_patches():
     PQInnerData.CONSTRUCTOR_ID = 0xa9f55f95
     rsa.encrypt = _vibe_rsa_encrypt
     _APPLIED = True
-    print("[vibe_auth] patches applied")
+    _vlog("[vibe_auth] patches applied")

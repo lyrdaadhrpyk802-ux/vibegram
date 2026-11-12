@@ -6,6 +6,7 @@
 # ============================================
 from telethon.tl import functions as tl_functions
 from userapi._tl_auto import bind as _bind
+from userapi._log import info as _vlog
 
 
 class ChannelsMixin:
@@ -78,4 +79,4 @@ def bind_to(client_cls):
     return new, skipped
 
 
-print("[channels] module loaded; call bind_to(VibeClient) to attach methods")
+_vlog("[channels] module loaded; call bind_to(VibeClient) to attach methods")

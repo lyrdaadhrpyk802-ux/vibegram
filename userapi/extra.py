@@ -8,6 +8,7 @@
 # ============================================
 from telethon.tl import functions as tl_functions
 from userapi._tl_auto import bind as _bind
+from userapi._log import info as _vlog
 
 
 _NAMESPACES = [
@@ -45,4 +46,4 @@ def bind_all(client_cls):
     return summary
 
 
-print("[extra] module loaded; call bind_all(VibeClient) to attach methods")
+_vlog("[extra] module loaded; call bind_all(VibeClient) to attach methods")

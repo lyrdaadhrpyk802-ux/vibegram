@@ -8,6 +8,7 @@ import inspect
 import re
 
 from telethon.tl import functions as tl_functions
+from userapi._log import info as _vlog
 
 
 # Names that are base classes or helpers, not real TL requests.
@@ -249,4 +250,4 @@ def bind_to(client_cls):
     return count_new, count_skipped
 
 
-print("[messages] module loaded; call bind_to(VibeClient) to attach methods")
+_vlog("[messages] module loaded; call bind_to(VibeClient) to attach methods")

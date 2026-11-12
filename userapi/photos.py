@@ -5,6 +5,7 @@
 # ============================================
 from telethon.tl import functions as tl_functions
 from userapi._tl_auto import bind as _bind
+from userapi._log import info as _vlog
 
 
 class PhotosMixin:
@@ -37,4 +38,4 @@ def bind_to(client_cls):
     return new, skipped
 
 
-print("[photos] module loaded; call bind_to(VibeClient) to attach methods")
+_vlog("[photos] module loaded; call bind_to(VibeClient) to attach methods")

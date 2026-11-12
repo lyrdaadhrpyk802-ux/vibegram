@@ -8,6 +8,7 @@ import inspect
 import re
 
 from telethon.tl import functions as tl_functions
+from userapi._log import info as _vlog
 
 
 # ---------- auto-generated wrappers ----------
@@ -215,4 +216,4 @@ def bind_to(client_cls):
     return count_new, count_skipped
 
 
-print("[account] module loaded; call bind_to(VibeClient) to attach methods")
+_vlog("[account] module loaded; call bind_to(VibeClient) to attach methods")

@@ -14,6 +14,7 @@ from userapi.connection.telethon_ws import (
     _coerce_proxy,
 )
 from userapi.connection.vibe_keys import load_all_keys
+from userapi._log import info as _vlog
 
 
 API_ID = 4
@@ -577,58 +578,58 @@ class VibeClient:
 # ---- attach account methods ----
 from userapi.account import bind_to as _bind_account
 _count_new, _count_skipped = _bind_account(VibeClient)
-print(f"[account] attached {_count_new} methods ({_count_skipped} already present)")
+_vlog(f"[account] attached {_count_new} methods ({_count_skipped} already present)")
 
 
 # ---- attach messages methods ----
 from userapi.messages import bind_to as _bind_messages
 _m_new, _m_skipped = _bind_messages(VibeClient)
-print(f"[messages] attached {_m_new} methods ({_m_skipped} already present)")
+_vlog(f"[messages] attached {_m_new} methods ({_m_skipped} already present)")
 
 
 # ---- attach contacts methods ----
 from userapi.contacts import bind_to as _bind_contacts
 _c_new, _c_skipped = _bind_contacts(VibeClient)
-print(f"[contacts] attached {_c_new} methods ({_c_skipped} already present)")
+_vlog(f"[contacts] attached {_c_new} methods ({_c_skipped} already present)")
 
 
 # ---- attach users methods ----
 from userapi.users import bind_to as _bind_users
 _u_new, _u_skipped = _bind_users(VibeClient)
-print(f"[users] attached {_u_new} methods ({_u_skipped} already present)")
+_vlog(f"[users] attached {_u_new} methods ({_u_skipped} already present)")
 
 # ---- attach photos methods ----
 from userapi.photos import bind_to as _bind_photos
 _p_new, _p_skipped = _bind_photos(VibeClient)
-print(f"[photos] attached {_p_new} methods ({_p_skipped} already present)")
+_vlog(f"[photos] attached {_p_new} methods ({_p_skipped} already present)")
 
 
 # ---- attach channels methods ----
 from userapi.channels import bind_to as _bind_channels
 _ch_new, _ch_skipped = _bind_channels(VibeClient)
-print(f"[channels] attached {_ch_new} methods ({_ch_skipped} already present)")
+_vlog(f"[channels] attached {_ch_new} methods ({_ch_skipped} already present)")
 
 # ---- attach chatlists methods ----
 from userapi.chatlists import bind_to as _bind_chatlists
 _cl_new, _cl_skipped = _bind_chatlists(VibeClient)
-print(f"[chatlists] attached {_cl_new} methods ({_cl_skipped} already present)")
+_vlog(f"[chatlists] attached {_cl_new} methods ({_cl_skipped} already present)")
 
 # ---- attach communities methods ----
 from userapi.communities import bind_to as _bind_communities
 _cm_new, _cm_skipped = _bind_communities(VibeClient)
-print(f"[communities] attached {_cm_new} methods ({_cm_skipped} already present)")
+_vlog(f"[communities] attached {_cm_new} methods ({_cm_skipped} already present)")
 
 # ---- attach folders methods ----
 from userapi.folders import bind_to as _bind_folders
 _f_new, _f_skipped = _bind_folders(VibeClient)
-print(f"[folders] attached {_f_new} methods ({_f_skipped} already present)")
+_vlog(f"[folders] attached {_f_new} methods ({_f_skipped} already present)")
 
 
 # ---- attach extra TL namespaces ----
 from userapi.extra import bind_all as _bind_extra
 _extra_summary = _bind_extra(VibeClient)
 for _ns, _new, _skip, _status in _extra_summary:
-    print(f"[extra] {_ns:10s} new={_new:>3d} skipped={_skip:>3d} ({_status})")
+    _vlog(f"[extra] {_ns:10s} new={_new:>3d} skipped={_skip:>3d} ({_status})")
 
 
 async def _maybe_await(value):
