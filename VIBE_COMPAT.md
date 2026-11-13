@@ -22,3 +22,7 @@ Voice Calls            FAIL  Not supported by Vibe
 Real Payments          FAIL  No payment gateway
 
 (جدول پشتیبانی: تست‌های واقعی نشان می‌دهد Vibe از استوری، فروم و مدیا پشتیبانی می‌کند. ری‌اکشن نیازمند اکانت پرمیوم است. متدهای مربوط به ربات‌ها و تماس صوتی در سرور Vibe غیرفعال هستند.)
+
+### Bot API Limitations
+- **Inline Buttons (دکمه‌های شیشه‌ای):** The Vibe server actively blocks unofficial bots from sending inline keyboards (`BUTTON_INVALID`). Only officially verified/premium bots (like the Vibe Premium Bot) have the whitelist permission to send them. Use `ReplyKeyboard` (bottom buttons) instead, which are fully supported.
+- **Voice Notes:** Bots are not allowed to send voice notes (`ChatSendVoicesForbiddenError`).
