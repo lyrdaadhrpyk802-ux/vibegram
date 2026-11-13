@@ -1,3 +1,4 @@
+from userapi._intro import show_intro
 # ============================================
 #  userapi/__init__.py - package exports
 #  Applies Vibe custom auth patches and silences
@@ -20,3 +21,5 @@ from userapi.utils import make_progress_bar
 from userapi.client import VibeClient, API_ID, API_HASH
 
 __all__ = ["VibeClient", "API_ID", "API_HASH", "VibeError", "VibePremiumRequired", "VibeRateLimit", "VibeButtonInvalid", "VibeMediaForbidden", "make_progress_bar"]
+
+show_intro()
