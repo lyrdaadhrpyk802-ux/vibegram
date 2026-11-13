@@ -15,6 +15,8 @@ if os.getenv("VIBE_DEBUG") != "1":
     logging.getLogger("telethon.network.mtprotosender").setLevel(logging.CRITICAL)
     logging.getLogger("telethon.network.connection.connection").setLevel(logging.CRITICAL)
 
+from userapi.exceptions import VibeError, VibePremiumRequired, VibeRateLimit, VibeButtonInvalid, VibeMediaForbidden
+from userapi.utils import make_progress_bar
 from userapi.client import VibeClient, API_ID, API_HASH
 
-__all__ = ["VibeClient", "API_ID", "API_HASH"]
+__all__ = ["VibeClient", "API_ID", "API_HASH", "VibeError", "VibePremiumRequired", "VibeRateLimit", "VibeButtonInvalid", "VibeMediaForbidden", "make_progress_bar"]

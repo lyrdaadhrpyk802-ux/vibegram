@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from userapi.client import VibeClient
 from botapi.methods import BotMethodsMixin
+from botapi.fsm import MemoryStorage
 
 class VibeBot(VibeClient, BotMethodsMixin):
     """A specialized client for Vibe Bots using MTProto."""
@@ -19,6 +20,7 @@ class VibeBot(VibeClient, BotMethodsMixin):
         super().__init__(session_path=session_path)
         self._token = token
         self._user_id = None
+        self.fsm = MemoryStorage()
 
     async def connect(self, timeout=60):
         """Connects and logs in as a bot using the token."""

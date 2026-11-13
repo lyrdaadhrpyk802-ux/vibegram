@@ -1,14 +1,21 @@
 # ============================================
-#  userapi/_log.py - module-load logging (silent by default)
-#  Set VIBE_VERBOSE=1 (or VIBE_DEBUG=1) to see method-attachment logs.
+#  userapi/_log.py - Standard Logging Setup
 #  All code and comments are English. No emojis.
 # ============================================
+import logging
 import os
 
-_VERBOSE = (os.getenv("VIBE_VERBOSE") == "1"
-            or os.getenv("VIBE_DEBUG") == "1")
+logger = logging.getLogger("vibegram")
 
+def setup_logging(level=logging.INFO):
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(level)
+    return logger
 
 def info(msg):
-    if _VERBOSE:
-        print(msg)
+    if os.getenv("VIBE_VERBOSE") == "1" or os.getenv("VIBE_DEBUG") == "1":
+        logger.info(msg)

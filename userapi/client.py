@@ -5,6 +5,7 @@
 # ============================================
 import asyncio
 from pathlib import Path
+from typing import Optional, Union, List, Any
 
 from telethon import TelegramClient
 
@@ -58,7 +59,7 @@ class VibeClient:
         await self.disconnect()
 
     # ---- lifecycle ----
-    async def connect(self, timeout=20):
+    async def connect(self, timeout: int = 20) -> bool:
         load_all_keys()
         if self._proxy:
             _set_ws_proxy(self._proxy)
@@ -97,7 +98,7 @@ class VibeClient:
         self._require_client()
         return await self._client.send_code_request(phone)
 
-    async def sign_in(self, phone=None, code=None, password=None, phone_code_hash=None):
+    async def sign_in(self, phone: Optional[str] = None, code: Optional[str] = None, password: Optional[str] = None, phone_code_hash: Optional[str] = None) -> Any:
         self._require_client()
         from telethon.errors import SessionPasswordNeededError
         try:
@@ -109,7 +110,7 @@ class VibeClient:
                 return await self._client.sign_in(password=password)
             raise
 
-    async def login(self, phone, code_callback=None, password_callback=None):
+    async def login(self, phone: str, code_callback: Any = None, password_callback: Any = None) -> Any:
         """High-level login that automatically detects and handles 2FA."""
         from telethon.errors import SessionPasswordNeededError
 
@@ -145,11 +146,11 @@ class VibeClient:
         return await self._client.get_me()
 
     # ---- messaging ----
-    async def send_message(self, peer, text, **kwargs):
+    async def send_message(self, peer: Union[int, str], text: str, **kwargs) -> Any:
         self._require_client()
         return await self._client.send_message(peer, text, **kwargs)
 
-    async def get_messages(self, peer, limit=20, **kwargs):
+    async def get_messages(self, peer: Union[int, str], limit: int = 20, **kwargs) -> List[Any]:
         self._require_client()
         return await self._client.get_messages(peer, limit=limit, **kwargs)
 
@@ -214,13 +215,18 @@ class VibeClient:
             reaction = [ReactionEmoji(emoticon=emoticon)]
         else:
             reaction = None  # clears
-        return await self._client(SendReactionRequest(
-            peer=peer_entity,
-            msg_id=msg_id,
-            big=True if big else None,
-            add_to_recent=True,
-            reaction=reaction,
-        ))
+        from telethon.errors import PremiumAccountRequiredError
+        from userapi.exceptions import VibePremiumRequired
+        try:
+            return await self._client(SendReactionRequest(
+                peer=peer_entity,
+                msg_id=msg_id,
+                big=True if big else None,
+                add_to_recent=True,
+                reaction=reaction,
+            ))
+        except PremiumAccountRequiredError:
+            raise VibePremiumRequired("ری‌اکشن نیاز به اکانت پرمیوم دارد.")
 
     async def get_pinned_message(self, peer):
         """Return the pinned message in a chat, or None."""
@@ -237,7 +243,7 @@ class VibeClient:
         self._require_client()
         return await self._client.edit_message(peer, msg_id, text, **kwargs)
 
-    async def delete_messages(self, peer, msg_ids, revoke=True):
+    async def delete_messages(self, peer: Union[int, str], msg_ids: Union[int, List[int]], revoke: bool = True) -> Any:
         """Delete messages. `revoke=True` removes for everyone."""
         self._require_client()
         return await self._client.delete_messages(peer, msg_ids, revoke=revoke)
