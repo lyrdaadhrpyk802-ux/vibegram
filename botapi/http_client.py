@@ -167,6 +167,39 @@ class VibeBotHTTP:
             allowed_updates=allowed_updates,
         )
 
+    # ---- webhook ----
+    async def set_webhook(
+        self,
+        url: str,
+        secret_token: Optional[str] = None,
+        max_connections: Optional[int] = None,
+        allowed_updates: Optional[List[str]] = None,
+        drop_pending_updates: Optional[bool] = None,
+    ) -> bool:
+        return await self.call(
+            "setWebhook",
+            url=url,
+            secret_token=secret_token,
+            max_connections=max_connections,
+            allowed_updates=allowed_updates,
+            drop_pending_updates=drop_pending_updates,
+        )
+
+    async def get_webhook_info(self) -> Dict[str, Any]:
+        return await self.call("getWebhookInfo")
+
+    async def delete_webhook(self, drop_pending_updates: Optional[bool] = None) -> bool:
+        return await self.call("deleteWebhook", drop_pending_updates=drop_pending_updates)
+
+    async def drop_pending_updates(self) -> bool:
+        return await self.call("dropPendingUpdates")
+
+    # ---- files ----
+    async def get_file(self, file_id: str) -> Dict[str, Any]:
+        """Return file metadata. Result includes 'file_id', 'file_unique_id',
+        'file_size' and (if the server supports it) 'file_path'."""
+        return await self.call("getFile", file_id=file_id)
+
     async def poll_updates(
         self,
         offset: Optional[int] = None,
