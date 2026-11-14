@@ -6,11 +6,69 @@ import asyncio
 import json
 from typing import Any, Dict, List, Optional
 
+from pathlib import Path
+
 import aiohttp
 
 
 DEFAULT_BASE_URL = "https://api.vibegram.chat"
 DEFAULT_TIMEOUT = 60
+
+
+def _is_file(v: Any) -> bool:
+    """Return True if v is a file-like value (Path, bytes, or file object)."""
+    if isinstance(v, (bytes, bytearray)):
+        return True
+    if hasattr(v, "read") and callable(getattr(v, "read")):
+        return True
+    return isinstance(v, Path)
+
+
+def _prepare_form(params: Dict[str, Any]):
+    """Build aiohttp.FormData with file uploads.
+
+    For media[] arrays (sendMediaGroup), inline file values are extracted
+    as named attachments and replaced with attach://<name> references.
+    Returns (form, cleanup_handles).
+    """
+    form = aiohttp.FormData()
+    cleanup: List[Any] = []
+    params = dict(params)
+
+    if isinstance(params.get("media"), list):
+        new_media = []
+        for i, item in enumerate(params["media"]):
+            if isinstance(item, dict) and _is_file(item.get("media")):
+                name = f"mfile{i}"
+                params[name] = item["media"]
+                item = {**item, "media": f"attach://{name}"}
+            new_media.append(item)
+        params["media"] = new_media
+
+    for k in list(params.keys()):
+        v = params[k]
+        if v is None:
+            del params[k]
+            continue
+        if isinstance(v, Path):
+            fh = open(v, "rb")
+            cleanup.append(fh)
+            form.add_field(k, fh, filename=v.name)
+            del params[k]
+        elif isinstance(v, (bytes, bytearray)):
+            form.add_field(k, bytes(v), filename="file.bin")
+            del params[k]
+        elif hasattr(v, "read") and callable(getattr(v, "read")):
+            form.add_field(k, v, filename=getattr(v, "name", "file.bin"))
+            del params[k]
+        elif isinstance(v, (dict, list)):
+            form.add_field(k, json.dumps(v, ensure_ascii=False))
+            del params[k]
+        else:
+            form.add_field(k, str(v))
+            del params[k]
+
+    return form, cleanup
 
 
 class VibeBotAPIError(Exception):
@@ -54,22 +112,46 @@ class VibeBotHTTP:
     async def _ensure_session(self) -> aiohttp.ClientSession:
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=self._timeout)
+                timeout=aiohttp.ClientTimeout(total=self._timeout),
             )
             self._owns_session = True
         return self._session
 
     async def call(self, method: str, **params: Any) -> Any:
-        """Invoke a Bot API method and return the 'result' field."""
+        """Invoke a Bot API method and return the 'result' field.
+
+        If any parameter looks like a file (Path, bytes, file object),
+        the request is sent as multipart/form-data. Otherwise as JSON.
+        """
         session = await self._ensure_session()
         url = self._endpoint(method)
 
-        # Strip None values so they are not sent
         payload = {k: v for k, v in params.items() if v is not None}
 
+        has_files = any(_is_file(v) for v in payload.values())
+        if not has_files and isinstance(payload.get("media"), list):
+            for item in payload["media"]:
+                if isinstance(item, dict) and _is_file(item.get("media")):
+                    has_files = True
+                    break
+
         try:
-            async with session.post(url, json=payload) as resp:
-                text = await resp.text()
+            if has_files:
+                form, cleanup = _prepare_form(payload)
+                try:
+                    async with session.post(url, data=form) as resp:
+                        status = resp.status
+                        text = await resp.text()
+                finally:
+                    for h in cleanup:
+                        try:
+                            h.close()
+                        except Exception:
+                            pass
+            else:
+                async with session.post(url, json=payload) as resp:
+                    status = resp.status
+                    text = await resp.text()
         except aiohttp.ClientError as e:
             raise ConnectionError(f"{method}: network error: {e}") from e
 
@@ -77,13 +159,13 @@ class VibeBotHTTP:
             data = json.loads(text)
         except json.JSONDecodeError:
             raise ConnectionError(
-                f"{method}: invalid JSON response (HTTP {resp.status}): {text[:200]}"
+                f"{method}: invalid JSON response (HTTP {status}): {text[:200]}"
             )
 
         if not isinstance(data, dict) or not data.get("ok", False):
             raise VibeBotAPIError(
                 method=method,
-                error_code=int(data.get("error_code", resp.status)) if isinstance(data, dict) else resp.status,
+                error_code=int(data.get("error_code", status)) if isinstance(data, dict) else status,
                 description=str(data.get("description", text[:200])) if isinstance(data, dict) else text[:200],
                 raw=data if isinstance(data, dict) else {"raw": text},
             )
@@ -98,9 +180,19 @@ class VibeBotHTTP:
         await self.close()
 
     async def close(self):
-        if self._session is not None and not self._session.closed:
-            await self._session.close()
+        session = self._session
         self._session = None
+        if session is None:
+            return
+        try:
+            if not session.closed:
+                await session.close()
+        except Exception:
+            pass
+        del session
+        import gc
+        gc.collect()
+        await asyncio.sleep(0.1)
 
     # ---- identity / profile ----
     async def get_me(self) -> Dict[str, Any]:
