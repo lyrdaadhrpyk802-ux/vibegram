@@ -1,29 +1,57 @@
 # examples
 
-مثال‌های آموزشی برای کتابخانه pyvibe. هر فایل مستقل و قابل اجراست.
+Practical examples for the `vibegram` library.
 
-## پیش‌نیاز
-- کتابخانه نصب شده (یا PYTHONPATH به ریشه پروژه)
-- یک‌بار لاگین (فایل 01_login.py)
+## Directory layout
 
-## اجرا
-cd ~/pyvibe
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$PWD" python -B examples/01_login.py
+- `http_bot/` - examples using `VibeBotHTTP` (HTTP Bot API, Telegram-compatible)
+- `legacy_mtproto_bots/` - examples using the legacy MTProto `VibeBot`
+- `01_login.py` ... `24_privacy.py` - MTProto user-API examples (VibeClient)
 
-## ترتیب پیشنهادی
-01 - 01_login.py - ورود با شماره تلفن + کد + رمز دو مرحله‌ای
-02 - 02_send_message.py - ارسال، ویرایش، حذف، پاسخ، پین
-03 - 03_read_messages.py - خواندن پیام‌ها، دیالوگ‌ها، جستجو
-04 - 04_send_media.py - ارسال عکس، فایل، ویس، لوکیشن، نظرسنجی
-05 - 05_live_updates.py - شنیدن پیام‌های زنده
-06 - 06_groups_channels.py - ساخت گروه، کانال، forum
-07 - 07_stories.py - استوری: ارسال، خواندن، حذف
-08 - 08_account.py - پروفایل، اسم، عکس، حریم خصوصی
-09 - 09_contacts.py - مخاطبین: افزودن، بلاک، لیست
-10 - 10_backup.py - پشتیبان‌گیری چت به JSON
-11 - 11_advanced.py - raw TL، دسترسی کامل
+## HTTP bots (recommended)
 
-## نکات
-- هر فایل از session ذخیره‌شده در ~/.vibe_session.session استفاده می‌کند.
-- پیام‌ها پیش‌فرض به Saved Messages فرستاده می‌شوند.
-- ری‌اکشن در Vibe نیاز به پرمیوم دارد.
+The `http_bot/` examples use the official HTTP Bot API at
+`https://api.vibegram.chat`. They are Telegram-compatible: any code you wrote
+for Telegram bots works here after swapping the base URL.
+
+Set the token once:
+
+```
+export VIBE_BOT_TOKEN="YOUR_BOT_TOKEN_HERE"
+```
+
+Then run any example:
+
+```
+python -B examples/http_bot/01_echo.py
+```
+
+|File|What it shows|
+|------|---------------|
+| `01_echo.py` | Long polling and message echo |
+| `02_inline_buttons.py` | Inline keyboards (callback_data + url) and callback queries |
+| `03_reply_keyboard.py` | Bottom reply keyboard |
+| `04_file_upload.py` | Send photo, document, and media group (album) |
+| `05_file_download.py` | Download photos sent by users |
+| `06_fsm_form.py` | Simple finite state machine (multi-step form) |
+| `07_group_admin.py` | Ban/unban, pin/unpin in a group |
+| `08_webhook_server.py` | Local aiohttp webhook receiver |
+
+For `08_webhook_server.py`, you also need a public HTTPS URL:
+
+```
+export VIBE_WEBHOOK_URL="https://yourdomain.com/webhook"
+```
+
+## Legacy MTProto bots
+
+`legacy_mtproto_bots/` contains examples for the older `VibeBot` MTProto
+client. They are kept for reference, but the MTProto path has server-side
+limitations (inline keyboards blocked, voice notes blocked, etc.). Prefer
+`VibeBotHTTP` for new work.
+
+## MTProto user-API examples
+
+The numbered files at the top level (`01_login.py`, `02_send_message.py`,
+...) exercise the user client `VibeClient` from `userapi/`. They require a
+logged-in session (`~/.vibe_session.session`).
