@@ -3,6 +3,13 @@
 Python client library for Vibe Messenger (vibegram.chat).
 MTProto over WebSocket with Vibe's custom authentication scheme.
 
+## API Modes
+
+This library provides two ways to interact with Vibe Messenger:
+
+1. **MTProto (User & Legacy Bot)**: High-level client wrapping Telethon (`userapi.VibeClient` and `botapi.VibeBot`). Fully reverse-engineered protocol over WebSocket.
+2. **HTTP Bot API (`botapi.VibeBotHTTP`)**: A Telegram-compatible HTTP Bot API client. Highly recommended for creating bots, fully supporting inline buttons, file uploads, and webhooks. See `botapi/README.md` for details.
+
 ## About the Author
 - Name: Ali VEX
 - Email: lyrdaadhrpyk802@gmail.com
