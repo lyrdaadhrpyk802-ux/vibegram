@@ -292,6 +292,41 @@ class VibeBotHTTP:
         'file_size' and (if the server supports it) 'file_path'."""
         return await self.call("getFile", file_id=file_id)
 
+    def _file_download_url(self, file_path: str) -> str:
+        return f"{self._base_url}/file/bot{self._token}/{file_path}"
+
+    async def download_file(
+        self,
+        file_id: str,
+        dest: Optional[Any] = None,
+    ) -> bytes:
+        """Download a file by file_id.
+
+        If dest is given (Path or str), writes the file there and returns bytes.
+        Otherwise returns bytes.
+        """
+        info = await self.get_file(file_id=file_id)
+        file_path = info.get("file_path")
+        if not file_path:
+            raise ConnectionError(f"download_file: no file_path for {file_id}")
+
+        url = self._file_download_url(file_path)
+        session = await self._ensure_session()
+        try:
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    text = await resp.text()
+                    raise ConnectionError(
+                        f"download_file: HTTP {resp.status}: {text[:200]}"
+                    )
+                data = await resp.read()
+        except aiohttp.ClientError as e:
+            raise ConnectionError(f"download_file: network error: {e}") from e
+
+        if dest is not None:
+            Path(dest).write_bytes(data)
+        return data
+
     async def poll_updates(
         self,
         offset: Optional[int] = None,
