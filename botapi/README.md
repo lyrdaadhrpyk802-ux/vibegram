@@ -148,7 +148,11 @@ await bot.delete_webhook(drop_pending_updates=False)
 - Actions: `sendChatAction`
 - Pinning: `pinChatMessage`, `unpinChatMessage`
 - Chat info: `getChat`, `getChatMember`, `getChatMemberCount`,
-  `getUserProfilePhotos`
+  `getChatAdministrators` (groups/channels only), `getUserProfilePhotos`
+- Chat admin: `setChatTitle`, `setChatDescription`, `setChatPermissions`
+  (needs the full permissions dict), `pinChatMessage`,
+  `unpinChatMessage`, `exportChatInviteLink`,
+  `createChatInviteLink`, `revokeChatInviteLink`
 - Files: `getFile`, plus `download_file` helper
 - Webhook: `setWebhook`, `getWebhookInfo`, `deleteWebhook`
 - Updates: `getUpdates` (long polling)
@@ -182,7 +186,9 @@ Generated and exposed, but not yet exercised end-to-end:
 - Games (`sendGame`, `setGameScore`, `getGameHighScores`)
 - Boosts (`getUserChatBoosts`)
 - Business (`getBusinessConnection`)
-- Forum topic CRUD
+- Forum topic CRUD (`createForumTopic` returns 400 BAD_REQUEST unless the
+  group is switched to forum mode manually in the Vibe client; this is a
+  group setting, not a bot limitation)
 - Invite link management and join requests
 - Moderation (`banChatMember`, `restrictChatMember`, `promoteChatMember`,
   `setChatPermissions`, ...)
