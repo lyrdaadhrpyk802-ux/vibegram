@@ -1,0 +1,39 @@
+# ============================================
+#  .github/workflows/ci.yml - continuous integration for vibegram
+#  Gates: syntax check (ast.parse) on every python file, then pytest.
+# ============================================
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  syntax:
+    name: Syntax check (ast.parse)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run ast.parse on all .py files
+        run: python scripts/check_syntax.py
+
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    needs: syntax
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest -v

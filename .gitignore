@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Test outputs
+*.log
+*.pcap
+*.pcapng
+pcap_stream.bin
+server_resp.bin
+
+# Session files - contain login data, never commit
+*.session
+*.session-journal
+*.session-shm
+*.session-wal
+
+# Secrets and env
+.env
+*.env
+.env.local
+secrets/
+
+# AI/prompt traces - never leave traces of AI assistance
+*HANDOVER*
+HANDOVER*
+*_AI_NOTES*
+.ai_notes/
+
+# Runtime artifacts
+*.pid
+*.pid.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Local config
+config_local.*
+vendor_telethon/
+backups/

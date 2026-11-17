@@ -1,0 +1,25 @@
+from userapi._intro import show_intro
+# ============================================
+#  userapi/__init__.py - package exports
+#  Applies Vibe custom auth patches and silences
+#  benign Telethon shutdown tracebacks (unless VIBE_DEBUG=1).
+#  All code and comments are English. No emojis.
+# ============================================
+import logging
+import os
+
+from userapi.crypto.vibe_auth import apply_patches, unapply_patches
+
+apply_patches()
+
+if os.getenv("VIBE_DEBUG") != "1":
+    logging.getLogger("telethon.network.mtprotosender").setLevel(logging.CRITICAL)
+    logging.getLogger("telethon.network.connection.connection").setLevel(logging.CRITICAL)
+
+from userapi.exceptions import VibeError, VibePremiumRequired, VibeRateLimit, VibeButtonInvalid, VibeMediaForbidden
+from userapi.utils import make_progress_bar
+from userapi.client import VibeClient, API_ID, API_HASH
+
+__all__ = ["VibeClient", "API_ID", "API_HASH", "apply_patches", "unapply_patches", "VibeError", "VibePremiumRequired", "VibeRateLimit", "VibeButtonInvalid", "VibeMediaForbidden", "make_progress_bar"]
+
+show_intro()

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vibegram"
+version = "1.5.1"
+description = "Python client library for Vibe Messenger (MTProto over WebSocket)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Ali VEX", email = "lyrdaadhrpyk802@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "websockets>=13.0",
+    "pycryptodome>=3.20",
+    # Pinned upper bound: vibe_auth patches PQInnerData and rsa.encrypt
+    # internals. Bump only after running the test suite and confirming
+    # tests/test_vibe_auth.py still passes.
+    "telethon>=1.36,<2.0",
+    "python-socks[asyncio]>=2.4",
+    "rsa>=4.9",
+    "aiohttp>=3.9",
+]
+
+[project.scripts]
+vibe = "scripts.vibe:main"
+
+[project.optional-dependencies]
+dev = [
+    "scapy>=2.5",
+    "pytest>=7.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["userapi*", "botapi*", "scripts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "userapi/tests"]

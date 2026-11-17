@@ -1,0 +1,12 @@
+# ============================================
+#  requirements.txt - Python dependencies
+#  All code and comments are English. No emojis.
+# ============================================
+websockets>=13.0
+pycryptodome>=3.20
+# Pinned: vibe_auth patches Telethon internals; do not bump past 2.0
+# without re-running tests/test_vibe_auth.py.
+telethon>=1.36,<2.0
+python-socks[asyncio]>=2.4
+rsa>=4.9
+aiohttp>=3.9
